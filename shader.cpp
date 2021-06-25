@@ -1,3 +1,5 @@
+//code source: https://learnopengl.com/Getting-started/Shaders
+
 #include "shader.h"
 
 #include <glm/glm.hpp>

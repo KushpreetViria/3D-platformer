@@ -1,3 +1,5 @@
+// code source: https://learnopengl.com/Getting-started/Camera + some adional code
+
 #include "camera.h"
 
 Camera::Camera(glm::vec3 position , glm::vec3 up, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
@@ -25,18 +27,26 @@ glm::mat4 Camera::GetViewMatrix()
 
 void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime){
     float velocity = MovementSpeed * deltaTime;
-    if (direction == Camera_Movement::FORWARD)
-        Position += Front * velocity;
-    if (direction == Camera_Movement::BACKWARD)
-        Position -= Front * velocity;
-    if (direction == Camera_Movement::LEFT)
-        Position -= Right * velocity;
-    if (direction == Camera_Movement::RIGHT)
-        Position += Right * velocity;
-    if (direction == Camera_Movement::UP)
-        Position += WorldUp * velocity;
-    if (direction == Camera_Movement::DOWN)
-        Position += (WorldUp*glm::vec3(-1.0f,-1.0f,-1.0f)) * velocity;
+    if (freeFormCam) {        
+        if (direction == Camera_Movement::FORWARD)
+            Position += Front * velocity;
+        if (direction == Camera_Movement::BACKWARD)
+            Position -= Front * velocity;
+        if (direction == Camera_Movement::LEFT)
+            Position -= Right * velocity;
+        if (direction == Camera_Movement::RIGHT)
+            Position += Right * velocity;
+        if (direction == Camera_Movement::UP)
+            Position += WorldUp * velocity;
+        if (direction == Camera_Movement::DOWN)
+            Position += (WorldUp * glm::vec3(-1.0f, -1.0f, -1.0f)) * velocity;
+    }
+    else {
+        if (direction == Camera_Movement::LEFT)
+            Position -= Right * velocity;
+        if (direction == Camera_Movement::RIGHT)
+            Position += Right * velocity;
+    }
 }
 
 void Camera::ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true){
