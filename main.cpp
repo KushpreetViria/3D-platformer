@@ -89,7 +89,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // build and compile our shader program   
-    Shader ourShader("shader-vertex.glsl", "shader-frag.glsl"); // you can name your shader files however you like
+    Shader ourShader("Resources/Shaders/shader-vertex.glsl", "Resources/Shaders/shader-frag.glsl"); // you can name your shader files however you like
 
     //----------vertex data and bind vertex arrays--------------
     float vertices[] = {
@@ -169,9 +169,9 @@ int main()
 
     //------------load textures------------
     GLuint texture1;
-    loadText(&texture1, "grassTex.jpg", false);
+    loadText(&texture1, "Resources/Textures/grassTex.jpg", false);
     GLuint texture2;
-    loadText(&texture2, "stoneTex.jpg", false);
+    loadText(&texture2, "Resources/Textures/stoneTex.jpg", false);
 
     ourShader.use();
     ourShader.setInt("texture1", 0);
