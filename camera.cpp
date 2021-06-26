@@ -26,27 +26,19 @@ glm::mat4 Camera::GetViewMatrix()
 }
 
 void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime){
-    float velocity = MovementSpeed * deltaTime;
-    if (freeFormCam) {        
-        if (direction == Camera_Movement::FORWARD)
-            Position += Front * velocity;
-        if (direction == Camera_Movement::BACKWARD)
-            Position -= Front * velocity;
-        if (direction == Camera_Movement::LEFT)
-            Position -= Right * velocity;
-        if (direction == Camera_Movement::RIGHT)
-            Position += Right * velocity;
-        if (direction == Camera_Movement::UP)
-            Position += WorldUp * velocity;
-        if (direction == Camera_Movement::DOWN)
-            Position += (WorldUp * glm::vec3(-1.0f, -1.0f, -1.0f)) * velocity;
-    }
-    else {
-        if (direction == Camera_Movement::LEFT)
-            Position -= Right * velocity;
-        if (direction == Camera_Movement::RIGHT)
-            Position += Right * velocity;
-    }
+    float velocity = MovementSpeed * deltaTime;    
+    if (direction == Camera_Movement::FORWARD)
+        Position += Front * velocity;
+    if (direction == Camera_Movement::BACKWARD)
+        Position -= Front * velocity;
+    if (direction == Camera_Movement::LEFT)
+        Position -= Right * velocity;
+    if (direction == Camera_Movement::RIGHT)
+        Position += Right * velocity;
+    if (direction == Camera_Movement::UP)
+        Position += WorldUp * velocity;
+    if (direction == Camera_Movement::DOWN)
+        Position += (WorldUp * glm::vec3(-1.0f, -1.0f, -1.0f)) * velocity;
 }
 
 void Camera::ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true){
@@ -63,8 +55,7 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset, GLboolean constr
             Pitch = 89.0f;
         if (Pitch < -89.0f)
             Pitch = -89.0f;
-    }
-
+    }    
     // update Front, Right and Up Vectors using the updated Euler angles
     updateCameraVectors();
 }
@@ -76,12 +67,6 @@ void Camera::ProcessMouseScroll(float yoffset){
     if (Zoom > 45.0f)
         Zoom = 45.0f;
 }
-
-void Camera::lockCamera(bool lockBool)
-{
-    freeFormCam = lockBool;    
-}
-
 
 void Camera::updateCameraVectors(){
     // calculate the new Front vector

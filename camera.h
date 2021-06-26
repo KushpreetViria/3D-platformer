@@ -43,8 +43,6 @@ public:
     float MouseSensitivity;
     float Zoom;
 
-    bool freeFormCam;
-
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH);
     //constructor with floats
@@ -61,10 +59,7 @@ public:
     void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch);
 
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-    void ProcessMouseScroll(float yoffset);
-
-    void lockCamera(bool);
-
+    void ProcessMouseScroll(float yoffset);    
 private:
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors();

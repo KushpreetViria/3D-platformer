@@ -31,8 +31,7 @@ const float xMaximum = 5.0f;
 const float zMinimum = 0.5f;
 const float zMaximum = 1.0f;
 const float offset = 0.05f;
-const float speedGrowth = 0.005f;
-const float maxSpeed = 0.01f;
+const float speed = 0.5f;
 
 // screen size settings
 const unsigned int SCR_WIDTH = 800;
@@ -182,7 +181,7 @@ int main()
     lastY = SCR_HEIGHT / 2.0f;
 
     createWorld(); //generate the world coordinates to draw 
-    cam = Camera(glm::vec3(player->x,player->y,player->z+2.0f));
+    cam = Camera(glm::vec3(player->pos.x,player->pos.y,player->pos.z+2.0f));
 
     // render loop
     while (!glfwWindowShouldClose(window))
@@ -191,7 +190,7 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        processInput(window);
+        processInput(window);        
         player->update();
         
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -224,7 +223,7 @@ int main()
         for (int i = 0; i < worldArray.size(); i++) {
             Box* b = worldArray[i];
             if (b != NULL) {
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(b->x, b->y, b->z + 0.01));
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(b->pos.x, b->pos.y, b->pos.z + 0.01));
                 model = glm::scale(model, glm::vec3(offset/2, offset / 2, offset / 2));
                 ourShader.setMat4("model", model);
                 ourShader.setVec3f("boxColor", b->color);
@@ -244,7 +243,7 @@ int main()
         //draw player        
         ourShader.setBool("doText", false); //no textures for player
         
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(player->x, player->y, player->z + 0.01));        
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(player->pos.x, player->pos.y, player->pos.z + 0.01));
         model = glm::rotate(model, player->rotationAngle, player->rotationAxis);
         model = glm::scale(model, glm::vec3(offset / 2, offset / 2, offset / 2));        
         ourShader.setMat4("model", model);
@@ -272,18 +271,20 @@ int main()
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-    if (firstMouse) {
+    if (debug) {
+        if (firstMouse) {
+            lastX = (float)xpos;
+            lastY = (float)ypos;
+            firstMouse = false;
+        }
+
+        float xoffset = (float)(xpos - lastX);
+        float yoffset = (float)(lastY - ypos);
         lastX = (float)xpos;
         lastY = (float)ypos;
-        firstMouse = false;
+
+        cam.ProcessMouseMovement(xoffset, yoffset, true);
     }
-
-    float xoffset = (float)( xpos - lastX);
-    float yoffset = (float)(lastY - ypos);
-    lastX = (float)xpos;
-    lastY = (float)ypos;
-
-    cam.ProcessMouseMovement(xoffset, yoffset, true);
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     cam.ProcessMouseScroll((float)yoffset);
@@ -357,13 +358,12 @@ void createWorld() {
 
 // process all input: whether relevant keys are pressed/released this frame and react 
 void processInput(GLFWwindow* window)
-{
+{ 
     if (escKey)
         glfwSetWindowShouldClose(window, true);
 
-    if (debug) {
+    if (debug){ 
         Camera_Movement direction = Camera_Movement::NONE;
-
         if (keyForward)
             direction = Camera_Movement::FORWARD;
         if (keyBack)
@@ -376,54 +376,46 @@ void processInput(GLFWwindow* window)
             direction = Camera_Movement::UP;
 
         cam.ProcessKeyboard(direction, deltaTime);
-    }
-    else {
+    
+    }else {
+        boxSides direction = boxSides::NONE;
         if (keyForward) {
-            player->zVector -= speedGrowth;
-            player->zVector = glm::max(player->zVector, -maxSpeed);
+            direction = boxSides::FRONT;
         }
-        else if (keyBack) {
-            player->zVector += speedGrowth;
-            player->zVector = glm::min(player->zVector, maxSpeed);
+        if (keyBack) {
+            direction = boxSides::BACK;
         }
-        else if (keyLeft) {
-            player->xVector -= speedGrowth;
-            player->xVector = glm::max(player->xVector, -maxSpeed);
+        if (keyLeft) {           
+            direction = boxSides::LEFT;
         }
-        else if (keyRight) {
-            player->xVector += speedGrowth;
-            player->xVector = glm::min(player->xVector, maxSpeed);
-        }
-        else {
-            player->xVector = 0.0f;
-            player->zVector = 0.0f;
+        if (keyRight) {            
+            direction = boxSides::RIGHT;
         }
 
         if (keyJump)
             player->startJump();
+        
+         cam.Front = player->front;
+         cam.Position = glm::vec3(player->pos.x - 1.0f, player->pos.y + 0.3f, player->pos.z);
+         
+         player->movePlayer(speed, deltaTime, direction);
     }
-
 
     //bound check
     if (player->getBoundary(boxSides::BOT) < 0.0f)
-        player->y = offset;
+        player->pos.y = offset;
 
-    if (player->x + player->xVector < xMinimum) { 
-        player->x = xMinimum - player->xVector;
+    if (player->pos.x< xMinimum) {
+        player->pos.x = xMinimum;
     }
-    if (player->x + player->xVector > xMaximum - offset) {
-        player->x = xMaximum - offset - player->xVector;     
+    if (player->pos.x> xMaximum - offset) {
+        player->pos.x = xMaximum - offset;
     }
-    if (player->z + player->zVector > zMaximum - offset) {
-        player->z = zMaximum - offset - player->zVector;
+    if (player->pos.z > zMaximum - offset) {
+        player->pos.z = zMaximum - offset;
     }
-    if (player->z + player->zVector < zMinimum) {
-        player->z = zMinimum - player->zVector;
-    }
-
-    if (debug) {
-        std::cout << "player.x: " << player->x << ", xMinimum: " << xMinimum << ", xMinimum: " << xMaximum << std::endl;
-        std::cout << "player.z: " << player->z << ", zMinimum: " << zMinimum << ", zMinimum: " << zMaximum << std::endl;
+    if (player->pos.z < zMinimum) {
+        player->pos.z = zMinimum;
     }
 }
 

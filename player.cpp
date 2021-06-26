@@ -27,29 +27,33 @@ float mylerpAcuteAngle(float t, float a, float b)
 	return mylerp(t, a, b);
 }
 
-Player::Player(float x, float y, float z, float width) : Box(x,y,z,width, glm::vec3(1, 0, 0),false), inJump(false),currJumpFrame(0),xVector(0.0f),zVector(0.0f)
-	,lerpStepsLeft(0),lerpStepsRight(0),lerpStepsFront(0),lerpStepsBack(0),frame(0),rotationAngle(0),rotationAxis(glm::vec3(1,0,0)){}
+glm::vec3 front;
+glm::vec3 up;
+glm::vec3 right;
+glm::vec3 worldUp;
+
+Player::Player(float x, float y, float z, float width,glm::vec3 worldUp, glm::vec3 front) : 
+	Box(x,y,z,width, glm::vec3(1, 0, 0),false), inJump(false),currJumpFrame(0), lerpSteps(0),
+	frame(0),rotationAngle(0),rotationAxis(glm::vec3(1,0,0)),worldUp(worldUp),front(front){
+
+	updateVectors();
+
+	std::cout << "pos: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
+	std::cout << "right: " << right.x << ", " << right.y << ", " << right.z << std::endl;
+	std::cout << "up: " << up.x << ", " << up.y << ", " << up.z << std::endl;
+	std::cout << "front: " << front.x << ", " << front.y << ", " << front.z << std::endl;
+}
 
 void Player::startJump()
 {
 	if (inJump == false && inRotation == false) {
 		inJump = true;
 		inRotation = true;
-
-		//determine direction of rotation and store it
-		if (xVector > 0.0f)
-			lastMoveDirection = boxSides::RIGHT;
-		else if (xVector < 0.0f)
-			lastMoveDirection = boxSides::LEFT;
-		else if (zVector > 0.0f)
-			lastMoveDirection = boxSides::FRONT;
-		else
-			lastMoveDirection = boxSides::BACK;
 	}
 }
 
 void Player::update()
-{
+{	
 	frame ++;
 	frame = frame % 60;
 
@@ -62,13 +66,13 @@ void Player::update()
 
 	//jump up and down in "maxJumpFrames" number of frames
 	if (inJump && currJumpFrame < totalJumpFrames/2) {
-		y += jumpSpeed;
+		pos.y += jumpSpeed;
 		currJumpFrame++;
 	}else if (inJump && currJumpFrame >= totalJumpFrames/2) {
 		if (currJumpFrame >= totalJumpFrames) {
 			inJump = false;
 		}else {
-			y -= jumpSpeed;
+			pos.y -= jumpSpeed;
 			currJumpFrame++;
 		}
 
@@ -76,10 +80,21 @@ void Player::update()
 		currJumpFrame = 0;
 	}
 
-	rotateBox();
+	rotateBox();	
+}
 
-	x += xVector;
-	z += zVector;
+void Player::movePlayer(float speed, float deltaTime, boxSides direction) {
+	float velocity = speed * deltaTime;
+	if (direction == boxSides::FRONT) {
+		pos += front * velocity;
+	} else if (direction == boxSides::BACK) {
+		pos -= front * velocity;
+	}else if (direction == boxSides::RIGHT) {
+		pos += right * velocity;
+	}else if (direction == boxSides::LEFT) {
+		pos -= right * velocity;
+	}
+	updateVectors();
 }
 
 float Player::getBoundary(boxSides side)
@@ -102,26 +117,11 @@ float Player::getBoundary(boxSides side)
 	return returnVal;
 }
 
-Player::~Player()
-{	}
-
 void Player::rotateBox()
 {		
 	if (inRotation) {
-		//originally meant to rotate whichever way midair, hense the 4 different time counting variables... ended up doing just one directional rotation per jump however
-		float tLeft = (float)lerpStepsLeft / (float)totalJumpFrames; // for flipping to left
-		float tRight = (float)lerpStepsRight / (float)totalJumpFrames;  //for flipping to right
-		float tFront = (float)lerpStepsFront / (float)totalJumpFrames; // for flipping towards front
-		float tBack = (float)lerpStepsBack / (float)totalJumpFrames;  //for flipping towards back
-
-		if (lastMoveDirection == boxSides::RIGHT)
-			inRotation = rotateBy(inRotation, tRight, lerpStepsRight, -PI, glm::vec3(0, 0, 1.0f));
-		else if (lastMoveDirection == boxSides::LEFT)
-			inRotation = rotateBy(inRotation, tLeft, lerpStepsLeft, PI, glm::vec3(0, 0, 1.0f));
-		else if (lastMoveDirection == boxSides::FRONT)
-			inRotation = rotateBy(inRotation, tFront, lerpStepsFront, PI, glm::vec3(1.0f, 0, 0));
-		else
-			inRotation = rotateBy(inRotation, tBack, lerpStepsBack, -PI, glm::vec3(1.0f, 0, 0));
+		float time = (float)lerpSteps / (float)totalJumpFrames;	
+		inRotation = rotateBy(inRotation, time, lerpSteps, -PI, glm::vec3(0, 0, 1.0f));
 	}
 }
 
@@ -134,7 +134,17 @@ bool Player::rotateBy(bool rotating, float time, int &steps, float angle, glm::v
 		return true;
 	}
 	else if (time >= 1.0f) {
-		steps = 0.0f;
+		steps = 0;
 		return false;
-	}
+	}	
+	return false;
 }
+
+void Player::updateVectors() {	
+	front = glm::normalize(front);	
+	right = glm::normalize(glm::cross(front, worldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+	up = glm::normalize(glm::cross(right, front));
+}
+
+Player::~Player()
+{	}
