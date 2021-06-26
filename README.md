@@ -4,3 +4,9 @@ Uses GLAD, GLFW, and GLM external libraries.
 stb_image.h can be found [here](https://github.com/nothings/stb).
 
 Written based on the introduction section of the tutorial [here](https://learnopengl.com/Introduction).
+
+Controls:
+Can move with WASD and Space keys. 
+D key toggles debug mode - doesn't do much except use a unrestricted camera.
+T key toggles textures.
+C key toggles collisions - not implemented.
