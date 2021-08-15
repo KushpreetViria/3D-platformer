@@ -10,4 +10,4 @@ Written based on the introduction section of the tutorial [here](https://learnop
 Controls:\
 Can move with WASD and Space keys.\
 Enter-Key key toggles debug mode - doesn't do much except use a unrestricted camera.\
-T key toggles textures.\
+T key toggles textures.
