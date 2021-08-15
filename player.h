@@ -13,7 +13,23 @@ enum class boxSides {
 };
 
 class Player : public Box{
-public:
+public:	
+	Player(float x, float y, float z, float width, glm::vec3 worldUp = glm::vec3(0.0f,1.0f,0.0f),glm::vec3 front = glm::vec3(1.0f,0.0f,0.0f));
+	
+	void setDirection(boxSides);
+	void setHorizontalSpeed(float);
+	void setVerticalSpeed(float);
+	
+	float getRotationAngle();
+	glm::vec3 getRotationAxis();
+	glm::vec3 getFrontVec();
+
+	void startJump();
+	void update(float);
+	float getBoundary(boxSides side);
+	~Player();
+
+private:
 	//player directional vectors
 	glm::vec3 front;
 	glm::vec3 up;
@@ -25,27 +41,24 @@ public:
 	float rotationAngle;
 
 	//default
-	int totalJumpFrames = 60;
-	float jumpSpeed = 0.01f;
-	
-	Player(float x, float y, float z, float width, glm::vec3 worldUp = glm::vec3(0.0f,1.0f,0.0f),glm::vec3 front = glm::vec3(1.0f,0.0f,0.0f));
-	void startJump();
-	void update();
-	void movePlayer(float speed, float deltaTime, boxSides direction);
-	float getBoundary(boxSides side);
-	~Player();
+	int totalJumpFrames = 60;	
 
-private:
-	int frame;
-	int currJumpFrame;
+	//variables for lerping
+	int frame = 0;
+	int currJumpFrame = 0;
+	int lerpSteps = 0;
 
-	bool inJump;
+	bool inJump = false;
 	bool inRotation = false;
-	int lerpSteps;	
 
+	// player directional and speed state
+	boxSides myDirection;
+	float myXZSpeed;
+	float myYSpeed;
+
+	void movePlayer(float speed, float deltaTime, boxSides direction);
 	void rotateBox();
 	bool rotateBy(bool rotating, float time, int& steps, float angle, glm::vec3 axis);
-	
 	void updateVectors();
 
 };

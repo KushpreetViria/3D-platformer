@@ -44,6 +44,34 @@ Player::Player(float x, float y, float z, float width,glm::vec3 worldUp, glm::ve
 	std::cout << "front: " << front.x << ", " << front.y << ", " << front.z << std::endl;
 }
 
+void Player::setDirection(boxSides side){
+	this->myDirection = side;
+}
+
+void Player::setHorizontalSpeed(float speed)
+{
+	this->myXZSpeed = speed;
+}
+
+void Player::setVerticalSpeed(float speed)
+{
+	this->myYSpeed = speed;
+}
+
+float Player:: getRotationAngle(){
+	return this->rotationAngle;
+}
+
+glm::vec3 Player::getRotationAxis()
+{
+	return this->rotationAxis;
+}
+
+glm::vec3 Player::getFrontVec()
+{
+	return this->front;
+}
+
 void Player::startJump()
 {
 	if (inJump == false && inRotation == false) {
@@ -52,7 +80,7 @@ void Player::startJump()
 	}
 }
 
-void Player::update()
+void Player::update(float deltaTime)
 {	
 	frame ++;
 	frame = frame % 60;
@@ -65,21 +93,21 @@ void Player::update()
 	}
 
 	//jump up and down in "maxJumpFrames" number of frames
-	if (inJump && currJumpFrame < totalJumpFrames/2) {
-		pos.y += jumpSpeed;
+	if (inJump && currJumpFrame < int(totalJumpFrames/2)) {
+		pos.y += myYSpeed * deltaTime;
 		currJumpFrame++;
-	}else if (inJump && currJumpFrame >= totalJumpFrames/2) {
+	}else if (inJump && currJumpFrame >= int(totalJumpFrames/2)) {
 		if (currJumpFrame >= totalJumpFrames) {
 			inJump = false;
 		}else {
-			pos.y -= jumpSpeed;
+			pos.y -= myYSpeed* deltaTime;
 			currJumpFrame++;
 		}
 
 	}else {
 		currJumpFrame = 0;
 	}
-
+	movePlayer(myXZSpeed, deltaTime, myDirection);
 	rotateBox();	
 }
 

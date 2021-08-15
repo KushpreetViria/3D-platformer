@@ -31,7 +31,9 @@ const float xMaximum = 5.0f;
 const float zMinimum = 0.5f;
 const float zMaximum = 1.0f;
 const float offset = 0.05f;
-const float speed = 0.5f;
+
+const float XZspeed = 0.5f;
+const float YSpeed = 0.9f;
 
 // screen size settings
 const unsigned int SCR_WIDTH = 800;
@@ -46,7 +48,10 @@ float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
 std::vector<Box*> worldArray;
-Camera cam; //free-camera class
+
+Camera* activeCam; //current active camera
+Camera playerCam;
+Camera freeDebugCam;
 Player* player;
 
 int main()
@@ -68,8 +73,9 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
-
-    cam = Camera(glm::vec3(0.0f, 0.5f, 2.0f)); //defualt    
+    
+    freeDebugCam = Camera(glm::vec3(3.0f,0.0f,-2.0f), glm::vec3(0.0f, 1.0f, 0.0f),90.0f); // debug free form camera    
+    activeCam = &playerCam;
 
     //set callback functions for event listeners    
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -180,8 +186,8 @@ int main()
     lastX = SCR_WIDTH / 2.0f;
     lastY = SCR_HEIGHT / 2.0f;
 
-    createWorld(); //generate the world coordinates to draw 
-    cam = Camera(glm::vec3(player->pos.x,player->pos.y,player->pos.z+2.0f));
+    createWorld(); //generate the world coordinates to draw , also add a player in world
+    playerCam = Camera(glm::vec3(player->pos.x,player->pos.y,player->pos.z+2.0f));
 
     // render loop
     while (!glfwWindowShouldClose(window))
@@ -191,7 +197,7 @@ int main()
         lastFrame = currentFrame;
 
         processInput(window);        
-        player->update();
+        player->update(deltaTime);
         
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -202,10 +208,10 @@ int main()
         glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
         ourShader.setMat4("model", model);
 
-        glm::mat4 view = cam.GetViewMatrix();
+        glm::mat4 view = activeCam->GetViewMatrix();
         ourShader.setMat4("view", view);
 
-        glm::mat4 projection = glm::perspective(glm::radians(cam.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(activeCam->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f);
         ourShader.setMat4("projection", projection);
 
         //rotating camera
@@ -244,7 +250,7 @@ int main()
         ourShader.setBool("doText", false); //no textures for player
         
         model = glm::translate(glm::mat4(1.0f), glm::vec3(player->pos.x, player->pos.y, player->pos.z + 0.01));
-        model = glm::rotate(model, player->rotationAngle, player->rotationAxis);
+        model = glm::rotate(model, player->getRotationAngle(), player->getRotationAxis());
         model = glm::scale(model, glm::vec3(offset / 2, offset / 2, offset / 2));        
         ourShader.setMat4("model", model);
         ourShader.setVec3f("boxColor", player->color);
@@ -283,11 +289,11 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
         lastX = (float)xpos;
         lastY = (float)ypos;
 
-        cam.ProcessMouseMovement(xoffset, yoffset, true);
+        freeDebugCam.ProcessMouseMovement(xoffset, yoffset, true);
     }
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    cam.ProcessMouseScroll((float)yoffset);
+    playerCam.ProcessMouseScroll((float)yoffset);
 }
 void loadText(GLuint* texture, const char* textFile, bool png) {
     glGenTextures(1, texture); //need to create an id for the texture
@@ -362,7 +368,10 @@ void processInput(GLFWwindow* window)
     if (escKey)
         glfwSetWindowShouldClose(window, true);
 
-    if (debug){ 
+    if (debug){
+        activeCam = &freeDebugCam;
+        player->setDirection(boxSides::NONE); //stops player movement
+
         Camera_Movement direction = Camera_Movement::NONE;
         if (keyForward)
             direction = Camera_Movement::FORWARD;
@@ -375,9 +384,10 @@ void processInput(GLFWwindow* window)
         if (keyJump)
             direction = Camera_Movement::UP;
 
-        cam.ProcessKeyboard(direction, deltaTime);
+        freeDebugCam.ProcessKeyboard(direction, deltaTime);
     
     }else {
+        activeCam = &playerCam;
         boxSides direction = boxSides::NONE;
         if (keyForward) {
             direction = boxSides::FRONT;
@@ -392,14 +402,18 @@ void processInput(GLFWwindow* window)
             direction = boxSides::RIGHT;
         }
 
+        player->setHorizontalSpeed(XZspeed);
+        player->setVerticalSpeed(YSpeed);
+        player->setDirection(direction);
+
         if (keyJump)
             player->startJump();
         
-         cam.Front = player->front;
-         cam.Position = glm::vec3(player->pos.x - 1.0f, player->pos.y + 0.3f, player->pos.z);
-         
-         player->movePlayer(speed, deltaTime, direction);
-    }
+         playerCam.Front = player->getFrontVec();
+         playerCam.Position = glm::vec3(player->pos.x - 1.0f, player->pos.y + 0.3f, player->pos.z);         
+    }    
+
+    if (doCollision)
 
     //bound check
     if (player->getBoundary(boxSides::BOT) < 0.0f)
