@@ -11,3 +11,5 @@ Controls:\
 Can move with WASD and Space keys.\
 Enter key toggles debug mode - doesn't do much except use a unrestricted camera.\
 T key toggles textures.
+
+Can run the exe on 64-bit windows.
